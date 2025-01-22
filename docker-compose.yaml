@@ -1,0 +1,38 @@
+# docker-compose.yaml
+---
+version: "3.7"
+services:
+  ts-oradb1:
+    image: tailscale/tailscale:latest
+    container_name: ts-oradb1
+    network_mode: bridge
+    hostname: oradb1
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      - TS_AUTHKEY=${AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      - tailscale-data-oradb1:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: always
+  oradb1:
+    container_name: oradb1
+    restart: always
+    depends_on:
+      - ts-oradb1
+    network_mode: service:ts-oradb1
+    image: container-registry.oracle.com/database/free:latest  
+    environment:
+      - ORACLE_CHARACTERSET=AL32UTF8
+      - ORACLE_PWD=${SA_PASSWORD}
+    volumes:
+      - /var/oracle/oradb1:/opt/oracle/oradata
+
+volumes:
+  tailscale-data-oradb1:
+    driver: local
